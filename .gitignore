@@ -1,0 +1,64 @@
+# 🎭 Pinocchio's Ad Manager URL Extractor - Git Ignore File
+# 🎪 Keeping the puppet strings clean and organized!
+
+# Node.js dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment variables and secrets
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Chrome extension build artifacts
+*.crx
+*.pem
+dist/
+build/
+
+# Puppeteer artifacts
+screenshots/
+downloads/
+test-results/
+*.log
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# Extension specific
+extension-data/
+user-preferences.json
+extraction-cache/
+
+# Pinocchio's workshop (development files)
+workshop/
+experiments/
+drafts/
+
+# 🎭 Remember: A clean repository is like a well-maintained puppet! 🎪

@@ -1,0 +1,48 @@
+{
+  "name": "ad-manager-url-extractor",
+  "version": "1.0.0",
+  "description": "Automated URL extraction tool for Google Ad Manager's Ad Review Center",
+  "main": "puppeteer-integration.js",
+  "scripts": {
+    "start": "node puppeteer-integration.js",
+    "extract": "node puppeteer-integration.js",
+    "extract-headless": "node puppeteer-integration.js --headless",
+    "extract-visible": "node puppeteer-integration.js --no-headless",
+    "extract-slow": "node puppeteer-integration.js --slow --no-headless",
+    "extract-screenshot": "node puppeteer-integration.js --screenshot",
+    "test": "node test-extraction.js",
+    "install-extension": "node install-extension.js"
+  },
+  "keywords": [
+    "google-ad-manager",
+    "puppeteer",
+    "automation",
+    "url-extraction",
+    "chrome-extension"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+    "puppeteer": "^21.0.0",
+    "fs-extra": "^11.1.1",
+    "commander": "^11.0.0",
+    "csv-writer": "^1.6.0",
+    "winston": "^3.10.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.45.0",
+    "prettier": "^3.0.0",
+    "jest": "^29.6.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/ad-manager-url-extractor.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/ad-manager-url-extractor/issues"
+  },
+  "homepage": "https://github.com/yourusername/ad-manager-url-extractor#readme"
+} 

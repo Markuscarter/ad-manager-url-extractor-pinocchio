@@ -1,0 +1,139 @@
+name: 🎭 Pinocchio's CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [16.x, 18.x, 20.x]
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+        cache-dependency-path: puppeteer-automation/package-lock.json
+    
+    - name: Install dependencies
+      run: |
+        cd puppeteer-automation
+        npm ci
+    
+    - name: Run tests
+      run: |
+        cd puppeteer-automation
+        npm test
+    
+    - name: Run linting
+      run: |
+        cd puppeteer-automation
+        npm run lint || echo "Linting not configured yet"
+    
+    - name: Check extension files
+      run: |
+        echo "🎭 Checking Chrome extension files..."
+        ls -la chrome-extension/
+        echo "✅ Extension files present"
+    
+    - name: Validate manifest.json
+      run: |
+        echo "🎪 Validating manifest.json..."
+        node -e "
+          const fs = require('fs');
+          const manifest = JSON.parse(fs.readFileSync('chrome-extension/manifest.json', 'utf8'));
+          console.log('✅ Manifest version:', manifest.manifest_version);
+          console.log('✅ Extension name:', manifest.name);
+          console.log('✅ Icons configured:', !!manifest.icons);
+        "
+
+  build:
+    runs-on: ubuntu-latest
+    needs: test
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18.x'
+        cache: 'npm'
+        cache-dependency-path: puppeteer-automation/package-lock.json
+    
+    - name: Install dependencies
+      run: |
+        cd puppeteer-automation
+        npm ci
+    
+    - name: Build extension package
+      run: |
+        echo "🎭 Building extension package..."
+        mkdir -p dist
+        cp -r chrome-extension/* dist/
+        echo "✅ Extension packaged in dist/"
+    
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: chrome-extension
+        path: dist/
+        retention-days: 30
+
+  release:
+    runs-on: ubuntu-latest
+    needs: [test, build]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Download build artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: chrome-extension
+        path: dist/
+    
+    - name: Create Release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: v${{ github.run_number }}
+        release_name: 🎭 Pinocchio's Release v${{ github.run_number }}
+        body: |
+          🎪 A new magical release of Pinocchio's Ad Manager URL Extractor!
+          
+          ## What's New
+          - Automated build and testing
+          - Enhanced Pinocchio theming
+          - Improved URL extraction capabilities
+          
+          ## Installation
+          1. Download the chrome-extension folder
+          2. Load it in Chrome with Developer mode enabled
+          3. Start pulling those strings! 🎭
+          
+          ## Changes
+          ${{ github.event.head_commit.message }}
+        draft: false
+        prerelease: false
+    
+    - name: Upload Release Assets
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./dist/
+        asset_name: chrome-extension-v${{ github.run_number }}.zip
+        asset_content_type: application/zip
