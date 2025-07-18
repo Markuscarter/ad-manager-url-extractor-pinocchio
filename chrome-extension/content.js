@@ -30,7 +30,23 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           success: true,
           urls: event.data.urls,
           count: event.data.urls.length
-        });
+        
+  if (request.action === 'forceClick') {
+    try {
+      const element = document.querySelector(request.selector);
+      if (element) {
+        element.click();
+        sendResponse({ success: true });
+      } else {
+        sendResponse({ success: false, error: 'Element not found' });
+      }
+    } catch (error) {
+      sendResponse({ success: false, error: error.message });
+    }
+    return true; // Keep message channel open for async response
+  }
+
+});
         window.removeEventListener('message', messageListener);
       }
     };
@@ -43,7 +59,23 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       sendResponse({
         success: false,
         error: 'Extraction timeout - no URLs found'
-      });
+      
+  if (request.action === 'forceClick') {
+    try {
+      const element = document.querySelector(request.selector);
+      if (element) {
+        element.click();
+        sendResponse({ success: true });
+      } else {
+        sendResponse({ success: false, error: 'Element not found' });
+      }
+    } catch (error) {
+      sendResponse({ success: false, error: error.message });
+    }
+    return true; // Keep message channel open for async response
+  }
+
+});
     }, 10000);
     
     return true; // Keep the message channel open for async response
@@ -59,8 +91,40 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       isAdReviewCenter: isAdReviewCenter,
       currentUrl: window.location.href,
       pageTitle: document.title
-    });
+    
+  if (request.action === 'forceClick') {
+    try {
+      const element = document.querySelector(request.selector);
+      if (element) {
+        element.click();
+        sendResponse({ success: true });
+      } else {
+        sendResponse({ success: false, error: 'Element not found' });
+      }
+    } catch (error) {
+      sendResponse({ success: false, error: error.message });
+    }
+    return true; // Keep message channel open for async response
   }
+
+});
+  }
+
+  if (request.action === 'forceClick') {
+    try {
+      const element = document.querySelector(request.selector);
+      if (element) {
+        element.click();
+        sendResponse({ success: true });
+      } else {
+        sendResponse({ success: false, error: 'Element not found' });
+      }
+    } catch (error) {
+      sendResponse({ success: false, error: error.message });
+    }
+    return true; // Keep message channel open for async response
+  }
+
 });
 
 // Notify that content script is ready

@@ -32,7 +32,6 @@
     }
   ],
   "action": {
-    "default_popup": "popup.html",
     "default_title": "\ud83c\udfad Pinocchio's URL Extractor"
   },
   "web_accessible_resources": [
