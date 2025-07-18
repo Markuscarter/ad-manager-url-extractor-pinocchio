@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Ad Manager URL Extractor (PINOCCHIO)",
   "version": "1.0.0",
-  "description": "🎭 Pinocchio's magical tool for extracting ad preview URLs from Google Ad Manager's Ad Review Center. Like a puppet master pulling strings to reveal hidden treasures!",
+  "description": "\ud83c\udfad Pinocchio's magical tool for extracting ad preview URLs from Google Ad Manager's Ad Review Center. Like a puppet master pulling strings to reveal hidden treasures!",
   "icons": {
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",
@@ -15,26 +15,34 @@
     "clipboardWrite"
   ],
   "host_permissions": [
-    "https://admanager.google.com/*"
+    "<all_urls>"
   ],
   "background": {
     "service_worker": "background.js"
   },
   "content_scripts": [
     {
-      "matches": ["https://admanager.google.com/*"],
-      "js": ["content.js"],
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "content.js"
+      ],
       "run_at": "document_end"
     }
   ],
   "action": {
     "default_popup": "popup.html",
-    "default_title": "🎭 Pinocchio's URL Extractor"
+    "default_title": "\ud83c\udfad Pinocchio's URL Extractor"
   },
   "web_accessible_resources": [
     {
-      "resources": ["injected.js"],
-      "matches": ["https://admanager.google.com/*"]
+      "resources": [
+        "injected.js"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
     }
   ]
 }
