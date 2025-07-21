@@ -198,7 +198,7 @@ class PopupController {
         
         // Attach copy button listeners
         resultsContainer.querySelectorAll('.copy-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
+            btn.addEventListener('click', (e) => {
                 const url = e.target.getAttribute('data-url');
                 this.copyToClipboard(url);
                 e.target.textContent = 'Copied!';
@@ -289,5 +289,94 @@ class PopupController {
 
 // Initialize popup when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    new PopupController();
-}); 
+    const popupController = new PopupController();
+    
+    // Add event listener for the "Force Click" button
+    const forceClickBtn = document.getElementById('forceClickBtn');
+    const selectorInput = document.getElementById('selectorInput');
+    const clickStatus = document.getElementById('clickStatus');
+
+    if (forceClickBtn) {
+        forceClickBtn.addEventListener('click', () => {
+            const selector = selectorInput.value;
+            if (!selector) {
+                clickStatus.textContent = 'Please enter a CSS selector.';
+                clickStatus.className = 'status-message error';
+                return;
+            }
+            
+            clickStatus.textContent = `Attempting to click "${selector}"...`;
+            clickStatus.className = 'status-message info';
+
+            chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+                const targetTab = tabs.find(tab => tab.url && !tab.url.startsWith('chrome-extension://'));
+                if (!targetTab) {
+                    clickStatus.textContent = 'Error: No active page found to interact with.';
+                    clickStatus.className = 'status-message error';
+                    return;
+                }
+
+                chrome.tabs.sendMessage(targetTab.id, {
+                    action: 'forceClick',
+                    selector: selector
+                }, (response) => {
+                    if (chrome.runtime.lastError) {
+                        clickStatus.textContent = `Error: Could not connect to the page. Make sure the page is fully loaded.`;
+                        clickStatus.className = 'status-message error';
+                    } else if (response && response.success) {
+                        clickStatus.textContent = `Successfully clicked "${selector}"!`;
+                        clickStatus.className = 'status-message success';
+                    } else {
+                        clickStatus.textContent = `Error: ${response.error || 'Could not find or click element.'}`;
+                        clickStatus.className = 'status-message error';
+                    }
+                });
+            });
+        });
+    }
+
+    // Add event listener for the "Run Dialog Test" button
+    const testDialogBtn = document.getElementById('testDialogBtn');
+    if (testDialogBtn) {
+        testDialogBtn.addEventListener('click', () => {
+            const testSelector = '#this-element-does-not-exist';
+            
+            console.log(`[AI DIALOG] Running test: Attempting to click "${testSelector}"`);
+            clickStatus.textContent = `[USER DIALOG] Running test...`;
+            clickStatus.className = 'status-message info';
+
+            chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+                const targetTab = tabs.find(tab => tab.url && !tab.url.startsWith('chrome-extension://'));
+                if (!targetTab) {
+                    const errorMessage = 'Error: No active page found to interact with.';
+                    console.error(`[AI DIALOG] ${errorMessage}`);
+                    clickStatus.textContent = `[USER DIALOG] ${errorMessage}`;
+                    clickStatus.className = 'status-message error';
+                    return;
+                }
+
+                chrome.tabs.sendMessage(targetTab.id, {
+                    action: 'forceClick',
+                    selector: testSelector
+                }, (response) => {
+                    if (chrome.runtime.lastError) {
+                        const errorMessage = `Error: Could not connect to the page. Make sure the page is fully loaded.`;
+                        console.error(`[AI DIALOG] ${errorMessage}`);
+                        clickStatus.textContent = `[USER DIALOG] ${errorMessage}`;
+                        clickStatus.className = 'status-message error';
+                    } else if (response && response.success) {
+                        const successMessage = `Successfully clicked "${testSelector}"! (This should not happen in a test).`;
+                        console.log(`[AI DIALOG] ${successMessage}`);
+                        clickStatus.textContent = `[USER DIALOG] ${successMessage}`;
+                        clickStatus.className = 'status-message success';
+                    } else {
+                        const errorMessage = `Test successful: Failed to click non-existent element as expected. Error: ${response.error}`;
+                        console.log(`[AI DIALOG] ${errorMessage}`);
+                        clickStatus.textContent = `[USER DIALOG] Test successful: Failed to click non-existent element.`;
+                        clickStatus.className = 'status-message success';
+                    }
+                });
+            });
+        });
+    }
+});

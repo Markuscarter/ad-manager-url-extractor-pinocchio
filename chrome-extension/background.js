@@ -17,6 +17,11 @@ class BackgroundService {
             }
         });
 
+        // Add listener for the extension icon click (for movable popup)
+        chrome.action.onClicked.addListener((tab) => {
+            this.createPopup(tab);
+        });
+
         // Handle messages from popup and content scripts
         chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             console.log('🎭 Background received message:', request);
@@ -39,6 +44,26 @@ class BackgroundService {
                     sendResponse({ success: false, error: 'Unknown action' });
                     return false;
             }
+        });
+    }
+
+    createPopup(tab) {
+        const width = 450;
+        const height = 650;
+
+        // Center the popup on the screen
+        chrome.windows.get(tab.windowId, (window) => {
+            const left = Math.round(window.left + (window.width - width) * 0.5);
+            const top = Math.round(window.top + (window.height - height) * 0.5);
+
+            chrome.windows.create({
+                url: chrome.runtime.getURL("popup.html"),
+                type: "popup",
+                width: width,
+                height: height,
+                left: left,
+                top: top
+            });
         });
     }
 
