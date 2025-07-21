@@ -87,11 +87,6 @@ class BackgroundService {
                 throw new Error('No active tab found');
             }
 
-            // Check if we're on the right page
-            if (!tab.url.includes('admanager.google.com')) {
-                throw new Error('Please navigate to Google Ad Manager first');
-            }
-
             // Execute content script to extract URLs
             const results = await chrome.scripting.executeScript({
                 target: { tabId: tab.id },
@@ -131,27 +126,17 @@ class BackgroundService {
 
     extractUrlsFromPage() {
         // This function runs in the context of the web page
-        const urls = [];
+        const urls = new Set();
         
         try {
-            // Look for ad preview URLs in various formats
-            const selectors = [
-                'a[href*="preview"]',
-                'a[href*="ad"]',
-                '[data-url]',
-                '[data-preview-url]',
-                '.preview-url',
-                '.ad-url'
-            ];
+            // Look for all anchor tags with an href attribute
+            const elements = document.querySelectorAll('a[href]');
             
-            selectors.forEach(selector => {
-                const elements = document.querySelectorAll(selector);
-                elements.forEach(element => {
-                    const url = element.href || element.getAttribute('data-url') || element.getAttribute('data-preview-url');
-                    if (url && url.includes('http') && !urls.includes(url)) {
-                        urls.push(url);
-                    }
-                });
+            elements.forEach(element => {
+                const url = element.href;
+                if (url.startsWith('http')) {
+                    urls.add(url);
+                }
             });
             
             // Also look for URLs in text content
@@ -161,9 +146,7 @@ class BackgroundService {
             
             if (matches) {
                 matches.forEach(url => {
-                    if (url.includes('preview') || url.includes('ad') && !urls.includes(url)) {
-                        urls.push(url);
-                    }
+                    urls.add(url);
                 });
             }
             
@@ -171,7 +154,7 @@ class BackgroundService {
             console.error('🎭 Page extraction error:', error);
         }
         
-        return urls;
+        return Array.from(urls);
     }
 
     handleGetSessionInfo(request, sendResponse) {
