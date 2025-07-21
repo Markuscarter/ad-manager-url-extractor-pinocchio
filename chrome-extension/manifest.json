@@ -26,9 +26,12 @@
         "<all_urls>"
       ],
       "js": [
-        "content.js"
+        "content.js",
+        "sidebar.js"
       ],
-      "run_at": "document_end"
+      "css": [
+        "popup.css"
+      ]
     }
   ],
   "action": {
@@ -37,7 +40,8 @@
   "web_accessible_resources": [
     {
       "resources": [
-        "injected.js"
+        "injected.js",
+        "popup.html"
       ],
       "matches": [
         "<all_urls>"
