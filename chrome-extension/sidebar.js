@@ -4,6 +4,8 @@
     let sidebarOpen = false;
     let sidebar;
     let iframe;
+    let popupReady = false;
+    let urlQueue = [];
 
     function createSidebar() {
         sidebar = document.createElement('div');
@@ -38,6 +40,14 @@
         sidebar.style.right = sidebarOpen ? '0' : '-450px';
     }
 
+    function sendMessageToPopup(message) {
+        if (popupReady && iframe && iframe.contentWindow) {
+            iframe.contentWindow.postMessage(message, '*');
+        } else {
+            urlQueue.push(message);
+        }
+    }
+
     chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         if (request.action === 'toggleSidebar') {
             toggleSidebar();
@@ -47,6 +57,12 @@
     window.addEventListener('message', async (event) => {
         if (event.data.action === 'extractUrls') {
             await extractUrlsInBatches();
+        } else if (event.data.action === 'popupReady') {
+            popupReady = true;
+            // Send any queued messages
+            while(urlQueue.length > 0) {
+                sendMessageToPopup(urlQueue.shift());
+            }
         }
     });
 
@@ -62,23 +78,19 @@
                     currentChunk.push(anchor.href);
                 }
 
-                if (currentChunk.length >= chunkSize || i === anchors.length - 1) {
-                    if (iframe && iframe.contentWindow) {
-                        iframe.contentWindow.postMessage({ action: 'urlUpdate', urls: currentChunk }, '*');
-                    }
+                if (currentChunk.length >= chunkSize || (i === anchors.length - 1 && currentChunk.length > 0)) {
+                    sendMessageToPopup({ action: 'urlUpdate', urls: currentChunk });
                     currentChunk = [];
                     // Yield to the main thread
                     await new Promise(resolve => setTimeout(resolve, 50)); 
                 }
             }
 
-            if (currentChunk.length > 0 && iframe && iframe.contentWindow) {
-                iframe.contentWindow.postMessage({ action: 'urlUpdate', urls: currentChunk }, '*');
+            if (currentChunk.length > 0) {
+                sendMessageToPopup({ action: 'urlUpdate', urls: currentChunk });
             }
 
-            if (iframe && iframe.contentWindow) {
-                iframe.contentWindow.postMessage({ action: 'extractionComplete' }, '*');
-            }
+            sendMessageToPopup({ action: 'extractionComplete' });
         } catch (error) {
             console.error('Pinocchio extraction error:', error);
         }

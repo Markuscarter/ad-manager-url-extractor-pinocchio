@@ -139,5 +139,7 @@ class PopupController {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    new PopupController();
+    const controller = new PopupController();
+    // Notify the parent window that the popup is ready
+    window.parent.postMessage({ action: 'popupReady' }, '*');
 });
