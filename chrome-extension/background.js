@@ -26,11 +26,15 @@ class BackgroundService {
             }
 
             const results = await chrome.scripting.executeScript({
-                target: { tabId: tab.id },
+                target: { tabId: tab.id, allFrames: true },
                 function: extractUrlsFromPage
             });
 
-            sendResponse({ success: true, urls: results[0].result });
+            // Combine results from all frames and remove duplicates
+            const allUrls = results.flatMap(frameResult => frameResult.result || []);
+            const uniqueUrls = [...new Set(allUrls)];
+
+            sendResponse({ success: true, urls: uniqueUrls });
 
         } catch (error) {
             console.error("Extraction error:", error);
