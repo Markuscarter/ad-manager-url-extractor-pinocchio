@@ -45,9 +45,12 @@
     });
 
     window.addEventListener('message', (event) => {
+        console.log('[sidebar.js] Received message:', event.data);
         if (event.data.action === 'extractUrls') {
             const urls = extractUrlsFromPage();
+            console.log(`[sidebar.js] Extracted ${urls.length} URLs`);
             if (iframe && iframe.contentWindow) {
+                console.log('[sidebar.js] Sending urlUpdate message to iframe');
                 iframe.contentWindow.postMessage({ action: 'urlUpdate', urls: urls }, '*');
             }
         }
@@ -68,7 +71,7 @@
                 matches.forEach(url => urls.add(url));
             }
         } catch (error) {
-            console.error('Extraction error:', error);
+            console.error('[sidebar.js] Extraction error:', error);
         }
         return Array.from(urls);
     }
