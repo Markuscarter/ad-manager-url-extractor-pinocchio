@@ -30,10 +30,9 @@ class BackgroundService {
 
             const results = await chrome.scripting.executeScript({
                 target: { tabId: tab.id, allFrames: true },
-                function: extractUrlsFromPage
+                function: automatedExtraction
             });
 
-            // Combine results from all frames and remove duplicates
             const allUrls = results.flatMap(frameResult => frameResult.result || []);
             const uniqueUrls = [...new Set(allUrls)];
 
@@ -92,6 +91,60 @@ class BackgroundService {
     }
 }
 
+function automatedExtraction() {
+    return new Promise(async (resolve) => {
+        const urls = new Set();
+        const originalWriteText = navigator.clipboard.writeText;
+
+        // Temporarily override the clipboard function to intercept URLs
+        navigator.clipboard.writeText = function(text) {
+            if (typeof text === 'string' && text.includes('admanager.google.com')) {
+                urls.add(text);
+            }
+            // We still call the original function, but we don't need its result
+            return originalWriteText.apply(this, arguments);
+        };
+
+        function findAndClick(rootNode, searchText) {
+            const elements = rootNode.querySelectorAll('*');
+            for (const element of elements) {
+                if (element.textContent.trim().includes(searchText)) {
+                    let clickableElement = element;
+                    while (clickableElement && typeof clickableElement.click !== 'function') {
+                        clickableElement = clickableElement.parentElement;
+                    }
+                    if (clickableElement) {
+                        clickableElement.click();
+                        return true;
+                    }
+                }
+                if (element.shadowRoot) {
+                    if (findAndClick(element.shadowRoot, searchText)) return true;
+                }
+            }
+            return false;
+        }
+
+        const adCreatives = document.querySelectorAll('[aria-label="Ad creative"]');
+        for (const creative of adCreatives) {
+            const menuButton = creative.querySelector('[aria-label="More actions"]');
+            if (menuButton) {
+                menuButton.click();
+                // Wait for the menu to appear
+                await new Promise(r => setTimeout(r, 200));
+                findAndClick(document, "Copy URL to share ad");
+                // Close the menu by clicking the button again
+                menuButton.click();
+                await new Promise(r => setTimeout(r, 100));
+            }
+        }
+
+        // Restore the original clipboard function
+        navigator.clipboard.writeText = originalWriteText;
+        resolve(Array.from(urls));
+    });
+}
+
 function findAndClickElement(text) {
     function findElement(rootNode, searchText) {
         const elements = rootNode.querySelectorAll('*');
@@ -116,31 +169,6 @@ function findAndClickElement(text) {
         return false;
     }
     return findElement(document, text);
-}
-
-function extractUrlsFromPage() {
-    const urls = new Set();
-
-    function findLinks(rootNode) {
-        // Find all anchor tags in the current root
-        const anchors = rootNode.querySelectorAll('a[href]');
-        for (const anchor of anchors) {
-            if (anchor.href && anchor.href.includes('admanager.google.com')) {
-                urls.add(anchor.href);
-            }
-        }
-
-        // Recursively search for shadow roots
-        const elements = rootNode.querySelectorAll('*');
-        for (const element of elements) {
-            if (element.shadowRoot) {
-                findLinks(element.shadowRoot);
-            }
-        }
-    }
-
-    findLinks(document);
-    return Array.from(urls);
 }
 
 // Initialize the background service
