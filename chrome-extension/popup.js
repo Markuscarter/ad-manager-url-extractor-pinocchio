@@ -28,7 +28,6 @@ class PopupController {
 
         // Listen for messages from the parent window (sidebar.js)
         window.addEventListener('message', (event) => {
-            console.log('[popup.js] Received message:', event.data);
             if (event.data.action === 'urlUpdate') {
                 this.updateUrls(event.data.urls);
                 this.updateStatus('success', `Found ${event.data.urls.length} URLs`);
@@ -41,7 +40,6 @@ class PopupController {
         this.updateStatus('info', 'Extracting URLs...');
         this.elements.extractBtn.disabled = true;
         // Send a message to the parent window (sidebar.js)
-        console.log('[popup.js] Sending extractUrls message to parent');
         window.parent.postMessage({ action: 'extractUrls' }, '*');
     }
 

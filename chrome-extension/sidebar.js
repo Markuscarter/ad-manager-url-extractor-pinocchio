@@ -45,33 +45,27 @@
     });
 
     window.addEventListener('message', (event) => {
-        console.log('[sidebar.js] Received message:', event.data);
         if (event.data.action === 'extractUrls') {
             const urls = extractUrlsFromPage();
-            console.log(`[sidebar.js] Extracted ${urls.length} URLs`);
             if (iframe && iframe.contentWindow) {
-                console.log('[sidebar.js] Sending urlUpdate message to iframe');
                 iframe.contentWindow.postMessage({ action: 'urlUpdate', urls: urls }, '*');
             }
         }
     });
 
     function extractUrlsFromPage() {
+        // Optimized and safer URL extraction
         const urls = new Set();
         try {
-            document.querySelectorAll('a[href]').forEach(el => {
-                if (el.href.startsWith('http')) {
-                    urls.add(el.href);
+            const anchors = document.querySelectorAll('a[href]');
+            for (let i = 0; i < anchors.length; i++) {
+                const url = anchors[i].href;
+                if (url.startsWith('http')) {
+                    urls.add(url);
                 }
-            });
-            const textContent = document.body.innerText;
-            const urlRegex = /https?:\/\/[^\s<>"{}|\\^`\[\]]+/g;
-            const matches = textContent.match(urlRegex);
-            if (matches) {
-                matches.forEach(url => urls.add(url));
             }
         } catch (error) {
-            console.error('[sidebar.js] Extraction error:', error);
+            console.error('Pinocchio extraction error:', error);
         }
         return Array.from(urls);
     }
