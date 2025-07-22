@@ -44,24 +44,30 @@
         }
     });
 
-    window.addEventListener('message', (event) => {
+    window.addEventListener('message', async (event) => {
         if (event.data.action === 'extractUrls') {
-            const urls = extractUrlsFromPage();
+            const urls = await extractUrlsFromPage();
             if (iframe && iframe.contentWindow) {
                 iframe.contentWindow.postMessage({ action: 'urlUpdate', urls: urls }, '*');
             }
         }
     });
 
-    function extractUrlsFromPage() {
-        // Optimized and safer URL extraction
+    async function extractUrlsFromPage() {
         const urls = new Set();
         try {
             const anchors = document.querySelectorAll('a[href]');
+            const chunkSize = 200; // Process 200 links at a time
+
             for (let i = 0; i < anchors.length; i++) {
-                const url = anchors[i].href;
-                if (url.startsWith('http')) {
-                    urls.add(url);
+                const anchor = anchors[i];
+                if (anchor.href && anchor.href.startsWith('http')) {
+                    urls.add(anchor.href);
+                }
+
+                // Yield to the main thread to keep the page responsive
+                if (i > 0 && i % chunkSize === 0) {
+                    await new Promise(resolve => setTimeout(resolve, 0));
                 }
             }
         } catch (error) {
