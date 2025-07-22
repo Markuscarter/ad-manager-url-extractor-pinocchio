@@ -80,7 +80,7 @@
                 }
 
                 const anchor = anchors[i];
-                if (anchor.href && anchor.href.startsWith('http')) {
+                if (anchor.href && anchor.href.includes('admanager.google.com')) {
                     currentChunk.push(anchor.href);
                 }
 
