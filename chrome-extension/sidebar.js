@@ -73,6 +73,12 @@
             let currentChunk = [];
 
             for (let i = 0; i < anchors.length; i++) {
+                // Safety check to prevent errors on extension reload
+                if (!chrome.runtime?.id) {
+                    console.log("Context invalidated. Halting extraction.");
+                    return;
+                }
+
                 const anchor = anchors[i];
                 if (anchor.href && anchor.href.startsWith('http')) {
                     currentChunk.push(anchor.href);
