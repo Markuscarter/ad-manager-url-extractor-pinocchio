@@ -103,6 +103,17 @@ function automatedExtraction() {
             return originalWriteText.apply(this, arguments);
         };
 
+        async function scrollToBottom() {
+            let lastHeight = 0;
+            let currentHeight = -1;
+            while (lastHeight !== currentHeight) {
+                lastHeight = document.body.scrollHeight;
+                window.scrollTo(0, document.body.scrollHeight);
+                await new Promise(r => setTimeout(r, 2000)); // Wait for lazy-loaded content
+                currentHeight = document.body.scrollHeight;
+            }
+        }
+
         function findElementsRecursively(rootNode, selector) {
             let elements = Array.from(rootNode.querySelectorAll(selector));
             const allNodes = rootNode.querySelectorAll('*');
@@ -133,6 +144,8 @@ function automatedExtraction() {
             }
             return false;
         }
+
+        await scrollToBottom();
 
         const adCreatives = findElementsRecursively(document, '[aria-label="Ad creative"]');
         for (const creative of adCreatives) {
