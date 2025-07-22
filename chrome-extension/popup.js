@@ -111,20 +111,14 @@ class PopupController {
         
         this.updateClickStatus('info', `Attempting to click "${selector}"...`);
 
-        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-            if (!tabs[0]) {
-                 this.updateClickStatus('error', 'Could not find active tab.');
-                 return;
+        chrome.runtime.sendMessage({ action: 'forceClick', selector: selector }, (response) => {
+            if (chrome.runtime.lastError) {
+                this.updateClickStatus('error', 'Error: ' + chrome.runtime.lastError.message);
+            } else if (response && response.success) {
+                this.updateClickStatus('success', `Successfully clicked "${selector}"!`);
+            } else {
+                this.updateClickStatus('error', response ? response.error : 'An unknown error occurred.');
             }
-            chrome.tabs.sendMessage(tabs[0].id, { action: 'forceClick', selector: selector }, (response) => {
-                if (chrome.runtime.lastError) {
-                    this.updateClickStatus('error', 'Could not connect to the page.');
-                } else if (response && response.success) {
-                    this.updateClickStatus('success', `Successfully clicked "${selector}"!`);
-                } else {
-                    this.updateClickStatus('error', response.error || 'Could not find or click element.');
-                }
-            });
         });
     }
 

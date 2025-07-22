@@ -11,6 +11,9 @@ class BackgroundService {
             if (request.action === 'extractUrls') {
                 this.handleUrlExtraction(sendResponse);
                 return true; // Keep message channel open for async response
+            } else if (request.action === 'forceClick') {
+                this.handleForceClick(request.selector, sendResponse);
+                return true; // Keep message channel open for async response
             }
         });
     }
@@ -31,6 +34,26 @@ class BackgroundService {
 
         } catch (error) {
             console.error("Extraction error:", error);
+            sendResponse({ success: false, error: error.message });
+        }
+    }
+
+    async handleForceClick(selector, sendResponse) {
+        try {
+            const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+            if (!tab) {
+                throw new Error("No active tab found.");
+            }
+
+            chrome.tabs.sendMessage(tab.id, { action: 'forceClick', selector: selector }, (response) => {
+                if (chrome.runtime.lastError) {
+                    sendResponse({ success: false, error: chrome.runtime.lastError.message });
+                } else {
+                    sendResponse(response);
+                }
+            });
+        } catch (error) {
+            console.error("Force click error:", error);
             sendResponse({ success: false, error: error.message });
         }
     }
