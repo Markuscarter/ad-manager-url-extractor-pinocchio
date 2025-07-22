@@ -28,14 +28,11 @@
       "js": [
         "content.js",
         "sidebar.js"
-      ],
-      "css": [
-        "popup.css"
       ]
     }
   ],
   "action": {
-    "default_title": "\ud83c\udfad Pinocchio's URL Extractor"
+    "default_title": "🎭 Pinocchio's URL Extractor"
   },
   "web_accessible_resources": [
     {
