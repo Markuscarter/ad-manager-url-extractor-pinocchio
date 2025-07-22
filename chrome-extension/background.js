@@ -115,17 +115,26 @@ function findAndClickElement(text) {
     function findElement(rootNode, searchText) {
         const elements = rootNode.querySelectorAll('*');
         for (const element of elements) {
-            if (element.textContent.trim().includes(searchText)) {
-                // Find the closest clickable ancestor
+            // More robust text matching
+            const elementText = element.textContent.trim().toLowerCase();
+            const searchLower = searchText.trim().toLowerCase();
+
+            if (elementText.includes(searchLower)) {
                 let clickableElement = element;
                 while (clickableElement && typeof clickableElement.click !== 'function') {
                     clickableElement = clickableElement.parentElement;
                 }
+
                 if (clickableElement) {
-                    clickableElement.click();
-                    return true;
+                    // Check if element is visible before clicking
+                    const style = window.getComputedStyle(clickableElement);
+                    if (style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0') {
+                        clickableElement.click();
+                        return true;
+                    }
                 }
             }
+
             if (element.shadowRoot) {
                 if (findElement(element.shadowRoot, searchText)) {
                     return true;
