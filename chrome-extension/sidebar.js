@@ -72,6 +72,10 @@
                 }
             }
 
+            if (currentChunk.length > 0 && iframe && iframe.contentWindow) {
+                iframe.contentWindow.postMessage({ action: 'urlUpdate', urls: currentChunk }, '*');
+            }
+
             if (iframe && iframe.contentWindow) {
                 iframe.contentWindow.postMessage({ action: 'extractionComplete' }, '*');
             }
