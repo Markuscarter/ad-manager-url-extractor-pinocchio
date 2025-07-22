@@ -26,26 +26,21 @@ class PopupController {
         this.elements.forceClickBtn.addEventListener('click', () => this.forceClick());
         this.elements.testDialogBtn.addEventListener('click', () => this.runDialogTest());
 
-        chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-            if (message.action === 'urlUpdate') {
-                this.updateUrls(message.urls);
+        // Listen for messages from the parent window (sidebar.js)
+        window.addEventListener('message', (event) => {
+            if (event.data.action === 'urlUpdate') {
+                this.updateUrls(event.data.urls);
+                this.updateStatus('success', `Found ${event.data.urls.length} URLs`);
+                this.elements.extractBtn.disabled = false;
             }
         });
     }
 
-    async startExtraction() {
+    startExtraction() {
         this.updateStatus('info', 'Extracting URLs...');
         this.elements.extractBtn.disabled = true;
-
-        chrome.runtime.sendMessage({ action: 'extractUrls' }, (response) => {
-            if (response && response.success) {
-                this.updateStatus('success', `Found ${response.urls.length} URLs`);
-                this.updateUrls(response.urls);
-            } else {
-                this.updateStatus('error', response.error || 'Extraction failed');
-            }
-            this.elements.extractBtn.disabled = false;
-        });
+        // Send a message to the parent window (sidebar.js)
+        window.parent.postMessage({ action: 'extractUrls' }, '*');
     }
 
     updateStatus(type, message) {

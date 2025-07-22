@@ -3,6 +3,7 @@
 (function() {
     let sidebarOpen = false;
     let sidebar;
+    let iframe;
 
     function createSidebar() {
         sidebar = document.createElement('div');
@@ -18,7 +19,7 @@
         sidebar.style.zIndex = '2147483647';
         sidebar.style.transition = 'right 0.3s ease';
         
-        const iframe = document.createElement('iframe');
+        iframe = document.createElement('iframe');
         iframe.style.width = '100%';
         iframe.style.height = '100%';
         iframe.style.border = 'none';
@@ -42,4 +43,33 @@
             toggleSidebar();
         }
     });
+
+    window.addEventListener('message', (event) => {
+        if (event.data.action === 'extractUrls') {
+            const urls = extractUrlsFromPage();
+            if (iframe && iframe.contentWindow) {
+                iframe.contentWindow.postMessage({ action: 'urlUpdate', urls: urls }, '*');
+            }
+        }
+    });
+
+    function extractUrlsFromPage() {
+        const urls = new Set();
+        try {
+            document.querySelectorAll('a[href]').forEach(el => {
+                if (el.href.startsWith('http')) {
+                    urls.add(el.href);
+                }
+            });
+            const textContent = document.body.innerText;
+            const urlRegex = /https?:\/\/[^\s<>"{}|\\^`\[\]]+/g;
+            const matches = textContent.match(urlRegex);
+            if (matches) {
+                matches.forEach(url => urls.add(url));
+            }
+        } catch (error) {
+            console.error('Extraction error:', error);
+        }
+        return Array.from(urls);
+    }
 })(); 
