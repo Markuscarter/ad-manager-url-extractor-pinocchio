@@ -65,13 +65,26 @@ class BackgroundService {
 
 function extractUrlsFromPage() {
     const urls = new Set();
-    const anchors = document.querySelectorAll('a[href]');
 
-    for (const anchor of anchors) {
-        if (anchor.href && anchor.href.includes('admanager.google.com')) {
-            urls.add(anchor.href);
+    function findLinks(rootNode) {
+        // Find all anchor tags in the current root
+        const anchors = rootNode.querySelectorAll('a[href]');
+        for (const anchor of anchors) {
+            if (anchor.href && anchor.href.includes('admanager.google.com')) {
+                urls.add(anchor.href);
+            }
+        }
+
+        // Recursively search for shadow roots
+        const elements = rootNode.querySelectorAll('*');
+        for (const element of elements) {
+            if (element.shadowRoot) {
+                findLinks(element.shadowRoot);
+            }
         }
     }
+
+    findLinks(document);
     return Array.from(urls);
 }
 
