@@ -23,25 +23,28 @@ class PopupController {
         this.elements.extractBtn.addEventListener('click', () => this.startExtraction());
         this.elements.clearBtn.addEventListener('click', () => this.clearResults());
         this.elements.forceClickBtn.addEventListener('click', () => this.forceClick());
-
-        // Listen for messages from the parent window (sidebar.js)
-        window.addEventListener('message', (event) => {
-            if (event.data.action === 'urlUpdate') {
-                this.appendUrls(event.data.urls);
-                this.updateStatus('info', `Found ${this.extractedUrls.length} URLs...`);
-            } else if (event.data.action === 'extractionComplete') {
-                this.updateStatus('success', `Extraction complete! Found ${this.extractedUrls.length} URLs.`);
-                this.elements.extractBtn.disabled = false;
-            }
-        });
     }
 
     startExtraction() {
         this.clearResults();
         this.updateStatus('info', 'Extracting URLs...');
         this.elements.extractBtn.disabled = true;
-        // Send a message to the parent window (sidebar.js)
-        window.parent.postMessage({ action: 'extractUrls' }, '*');
+
+        chrome.runtime.sendMessage({ action: 'extractUrls' }, (response) => {
+            if (chrome.runtime.lastError) {
+                this.updateStatus('error', 'Error: ' + chrome.runtime.lastError.message);
+                this.elements.extractBtn.disabled = false;
+                return;
+            }
+
+            if (response && response.success) {
+                this.updateUrls(response.urls);
+                this.updateStatus('success', `Extraction complete! Found ${response.urls.length} URLs.`);
+            } else {
+                this.updateStatus('error', response ? response.error : 'An unknown error occurred.');
+            }
+            this.elements.extractBtn.disabled = false;
+        });
     }
 
     updateStatus(type, message) {
@@ -49,13 +52,8 @@ class PopupController {
         this.elements.status.textContent = message;
     }
 
-    appendUrls(urls) {
-        if (!Array.isArray(urls)) return;
-        this.extractedUrls.push(...urls);
-        this.renderResults();
-    }
-
     updateUrls(urls) {
+        if (!Array.isArray(urls)) return;
         this.extractedUrls = urls;
         this.renderResults();
     }
@@ -114,6 +112,10 @@ class PopupController {
         this.updateClickStatus('info', `Attempting to click "${selector}"...`);
 
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+            if (!tabs[0]) {
+                 this.updateClickStatus('error', 'Could not find active tab.');
+                 return;
+            }
             chrome.tabs.sendMessage(tabs[0].id, { action: 'forceClick', selector: selector }, (response) => {
                 if (chrome.runtime.lastError) {
                     this.updateClickStatus('error', 'Could not connect to the page.');
@@ -125,12 +127,6 @@ class PopupController {
             });
         });
     }
-    
-    runDialogTest() {
-        // This is a placeholder for the dialog test functionality.
-        // For now, it just updates the status.
-        this.updateClickStatus('info', 'Running dialog test...');
-    }
 
     updateClickStatus(type, message) {
         this.elements.clickStatus.className = `status-message ${type}`;
@@ -139,7 +135,5 @@ class PopupController {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    const controller = new PopupController();
-    // Notify the parent window that the popup is ready
-    window.parent.postMessage({ action: 'popupReady' }, '*');
+    new PopupController();
 });
