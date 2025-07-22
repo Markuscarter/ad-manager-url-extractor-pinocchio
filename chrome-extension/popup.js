@@ -15,8 +15,7 @@ class PopupController {
             results: document.getElementById('results'),
             selectorInput: document.getElementById('selectorInput'),
             forceClickBtn: document.getElementById('forceClickBtn'),
-            clickStatus: document.getElementById('clickStatus'),
-            testDialogBtn: document.getElementById('testDialogBtn')
+            clickStatus: document.getElementById('clickStatus')
         };
     }
 
@@ -24,7 +23,6 @@ class PopupController {
         this.elements.extractBtn.addEventListener('click', () => this.startExtraction());
         this.elements.clearBtn.addEventListener('click', () => this.clearResults());
         this.elements.forceClickBtn.addEventListener('click', () => this.forceClick());
-        this.elements.testDialogBtn.addEventListener('click', () => this.runDialogTest());
 
         // Listen for messages from the parent window (sidebar.js)
         window.addEventListener('message', (event) => {
