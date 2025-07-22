@@ -13,8 +13,8 @@ class PopupController {
             extractBtn: document.getElementById('extractBtn'),
             clearBtn: document.getElementById('clearBtn'),
             results: document.getElementById('results'),
-            selectorInput: document.getElementById('selectorInput'),
-            forceClickBtn: document.getElementById('forceClickBtn'),
+            clickTextInput: document.getElementById('clickTextInput'),
+            targetedClickBtn: document.getElementById('targetedClickBtn'),
             clickStatus: document.getElementById('clickStatus')
         };
     }
@@ -22,7 +22,7 @@ class PopupController {
     attachEventListeners() {
         this.elements.extractBtn.addEventListener('click', () => this.startExtraction());
         this.elements.clearBtn.addEventListener('click', () => this.clearResults());
-        this.elements.forceClickBtn.addEventListener('click', () => this.forceClick());
+        this.elements.targetedClickBtn.addEventListener('click', () => this.targetedClick());
     }
 
     startExtraction() {
@@ -102,20 +102,20 @@ class PopupController {
         this.updateStatus('info', 'Results cleared');
     }
 
-    forceClick() {
-        const selector = this.elements.selectorInput.value;
-        if (!selector) {
-            this.updateClickStatus('error', 'Please enter a CSS selector.');
+    targetedClick() {
+        const clickText = this.elements.clickTextInput.value;
+        if (!clickText) {
+            this.updateClickStatus('error', 'Please enter the text of the element to click.');
             return;
         }
         
-        this.updateClickStatus('info', `Attempting to click "${selector}"...`);
+        this.updateClickStatus('info', `Attempting to click element containing "${clickText}"...`);
 
-        chrome.runtime.sendMessage({ action: 'forceClick', selector: selector }, (response) => {
+        chrome.runtime.sendMessage({ action: 'targetedClick', text: clickText }, (response) => {
             if (chrome.runtime.lastError) {
                 this.updateClickStatus('error', 'Error: ' + chrome.runtime.lastError.message);
             } else if (response && response.success) {
-                this.updateClickStatus('success', `Successfully clicked "${selector}"!`);
+                this.updateClickStatus('success', `Successfully clicked element containing "${clickText}"!`);
             } else {
                 this.updateClickStatus('error', response ? response.error : 'An unknown error occurred.');
             }

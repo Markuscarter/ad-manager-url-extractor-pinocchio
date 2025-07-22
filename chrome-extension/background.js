@@ -14,6 +14,9 @@ class BackgroundService {
             } else if (request.action === 'forceClick') {
                 this.handleForceClick(request.selector, sendResponse);
                 return true; // Keep message channel open for async response
+            } else if (request.action === 'targetedClick') {
+                this.handleTargetedClick(request.text, sendResponse);
+                return true; // Keep message channel open for async response
             }
         });
     }
@@ -61,6 +64,58 @@ class BackgroundService {
             sendResponse({ success: false, error: error.message });
         }
     }
+
+    async handleTargetedClick(text, sendResponse) {
+        try {
+            const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+            if (!tab) {
+                throw new Error("No active tab found.");
+            }
+
+            const results = await chrome.scripting.executeScript({
+                target: { tabId: tab.id, allFrames: true },
+                function: findAndClickElement,
+                args: [text]
+            });
+
+            const success = results.some(frameResult => frameResult.result);
+            if (success) {
+                sendResponse({ success: true });
+            } else {
+                sendResponse({ success: false, error: "Could not find a clickable element containing that text." });
+            }
+
+        } catch (error) {
+            console.error("Targeted click error:", error);
+            sendResponse({ success: false, error: error.message });
+        }
+    }
+}
+
+function findAndClickElement(text) {
+    function findElement(rootNode, searchText) {
+        const elements = rootNode.querySelectorAll('*');
+        for (const element of elements) {
+            if (element.textContent.trim().includes(searchText)) {
+                // Find the closest clickable ancestor
+                let clickableElement = element;
+                while (clickableElement && typeof clickableElement.click !== 'function') {
+                    clickableElement = clickableElement.parentElement;
+                }
+                if (clickableElement) {
+                    clickableElement.click();
+                    return true;
+                }
+            }
+            if (element.shadowRoot) {
+                if (findElement(element.shadowRoot, searchText)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+    return findElement(document, text);
 }
 
 function extractUrlsFromPage() {
