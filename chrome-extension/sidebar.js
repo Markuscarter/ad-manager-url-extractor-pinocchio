@@ -46,33 +46,37 @@
 
     window.addEventListener('message', async (event) => {
         if (event.data.action === 'extractUrls') {
-            const urls = await extractUrlsFromPage();
-            if (iframe && iframe.contentWindow) {
-                iframe.contentWindow.postMessage({ action: 'urlUpdate', urls: urls }, '*');
-            }
+            await extractUrlsInBatches();
         }
     });
 
-    async function extractUrlsFromPage() {
-        const urls = new Set();
+    async function extractUrlsInBatches() {
         try {
             const anchors = document.querySelectorAll('a[href]');
-            const chunkSize = 200; // Process 200 links at a time
+            const chunkSize = 100;
+            let currentChunk = [];
 
             for (let i = 0; i < anchors.length; i++) {
                 const anchor = anchors[i];
                 if (anchor.href && anchor.href.startsWith('http')) {
-                    urls.add(anchor.href);
+                    currentChunk.push(anchor.href);
                 }
 
-                // Yield to the main thread to keep the page responsive
-                if (i > 0 && i % chunkSize === 0) {
-                    await new Promise(resolve => setTimeout(resolve, 0));
+                if (currentChunk.length >= chunkSize || i === anchors.length - 1) {
+                    if (iframe && iframe.contentWindow) {
+                        iframe.contentWindow.postMessage({ action: 'urlUpdate', urls: currentChunk }, '*');
+                    }
+                    currentChunk = [];
+                    // Yield to the main thread
+                    await new Promise(resolve => setTimeout(resolve, 50)); 
                 }
+            }
+
+            if (iframe && iframe.contentWindow) {
+                iframe.contentWindow.postMessage({ action: 'extractionComplete' }, '*');
             }
         } catch (error) {
             console.error('Pinocchio extraction error:', error);
         }
-        return Array.from(urls);
     }
 })(); 

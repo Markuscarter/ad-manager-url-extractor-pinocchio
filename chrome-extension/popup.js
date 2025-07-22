@@ -27,14 +27,17 @@ class PopupController {
         // Listen for messages from the parent window (sidebar.js)
         window.addEventListener('message', (event) => {
             if (event.data.action === 'urlUpdate') {
-                this.updateUrls(event.data.urls);
-                this.updateStatus('success', `Found ${event.data.urls.length} URLs`);
+                this.appendUrls(event.data.urls);
+                this.updateStatus('info', `Found ${this.extractedUrls.length} URLs...`);
+            } else if (event.data.action === 'extractionComplete') {
+                this.updateStatus('success', `Extraction complete! Found ${this.extractedUrls.length} URLs.`);
                 this.elements.extractBtn.disabled = false;
             }
         });
     }
 
     startExtraction() {
+        this.clearResults();
         this.updateStatus('info', 'Extracting URLs...');
         this.elements.extractBtn.disabled = true;
         // Send a message to the parent window (sidebar.js)
@@ -44,6 +47,12 @@ class PopupController {
     updateStatus(type, message) {
         this.elements.status.className = `status ${type}`;
         this.elements.status.textContent = message;
+    }
+
+    appendUrls(urls) {
+        if (!Array.isArray(urls)) return;
+        this.extractedUrls.push(...urls);
+        this.renderResults();
     }
 
     updateUrls(urls) {
