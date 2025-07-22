@@ -96,16 +96,25 @@ function automatedExtraction() {
         const urls = new Set();
         const originalWriteText = navigator.clipboard.writeText;
 
-        // Temporarily override the clipboard function to intercept URLs
         navigator.clipboard.writeText = function(text) {
             if (typeof text === 'string' && text.includes('admanager.google.com')) {
                 urls.add(text);
             }
-            // We still call the original function, but we don't need its result
             return originalWriteText.apply(this, arguments);
         };
 
-        function findAndClick(rootNode, searchText) {
+        function findElementsRecursively(rootNode, selector) {
+            let elements = Array.from(rootNode.querySelectorAll(selector));
+            const allNodes = rootNode.querySelectorAll('*');
+            for (const node of allNodes) {
+                if (node.shadowRoot) {
+                    elements = elements.concat(findElementsRecursively(node.shadowRoot, selector));
+                }
+            }
+            return elements;
+        }
+
+        function findAndClickByText(rootNode, searchText) {
             const elements = rootNode.querySelectorAll('*');
             for (const element of elements) {
                 if (element.textContent.trim().includes(searchText)) {
@@ -119,27 +128,27 @@ function automatedExtraction() {
                     }
                 }
                 if (element.shadowRoot) {
-                    if (findAndClick(element.shadowRoot, searchText)) return true;
+                    if (findAndClickByText(element.shadowRoot, searchText)) return true;
                 }
             }
             return false;
         }
 
-        const adCreatives = document.querySelectorAll('[aria-label="Ad creative"]');
+        const adCreatives = findElementsRecursively(document, '[aria-label="Ad creative"]');
         for (const creative of adCreatives) {
-            const menuButton = creative.querySelector('[aria-label="More actions"]');
-            if (menuButton) {
-                menuButton.click();
-                // Wait for the menu to appear
+            const menuButtons = findElementsRecursively(creative, '[aria-label="More actions"]');
+            if (menuButtons.length > 0) {
+                menuButtons[0].click();
                 await new Promise(r => setTimeout(r, 200));
-                findAndClick(document, "Copy URL to share ad");
-                // Close the menu by clicking the button again
-                menuButton.click();
+                findAndClickByText(document, "Copy URL to share ad");
                 await new Promise(r => setTimeout(r, 100));
+                // Attempt to close the menu, e.g., by clicking the button again or pressing escape
+                if (document.activeElement && typeof document.activeElement.blur === 'function') {
+                    document.activeElement.blur();
+                }
             }
         }
 
-        // Restore the original clipboard function
         navigator.clipboard.writeText = originalWriteText;
         resolve(Array.from(urls));
     });
